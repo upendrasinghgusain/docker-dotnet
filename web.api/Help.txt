@@ -1,0 +1,37 @@
+﻿If you want to keep the Dockerfile as-is, run the build from the solution root (the parent directory of web.api):
+docker build -f web.api/Dockerfile -t yourimagename .
+
+By default, ASP.NET Core uses ASPNETCORE_URLS or HTTPS_PORT environment variables to determine which ports to listen on for HTTP/HTTPS.
+Visual Studio automatically configures Kestrel to listen on both HTTP and HTTPS, and sets up certificates for you.
+Your Docker container is exposing ports 8080 and 8081, but by default, Kestrel inside the container only listens on http://localhost:5000 (and sometimes https://localhost:5001 if configured).
+Port mapping (-p 32780:8080) only works if the app inside the container is actually listening on port 8080.
+
+Tell your app to listen on the correct ports by setting the ASPNETCORE_URLS environment variable in your Dockerfile or at runtime.
+ENV ASPNETCORE_URLS=http://+:8080;https://+:8081
+
+When running in Docker, the environment defaults to Production, so Swagger and Swagger UI are not enabled.
+Run your container with the environment variable set:
+docker run -p 32780:8080 -p 32781:8081 -e ASPNETCORE_ENVIRONMENT=Development webapi:latest
+
+
+The reason HTTPS is not working in your Docker container is because Kestrel (the ASP.NET Core web server) requires a certificate to serve HTTPS, and by default, no certificate is configured in your Docker image.
+By default, Visual Studio handles HTTPS certificates for you during local development, but in Docker you must configure it yourself.
+
+Generate a Development Certificate
+dotnet dev-certs https -ep %USERPROFILE%\.aspnet\https\web.api.pfx -p YourPassword
+
+Update Your Dockerfile
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/https/web.api.pfx
+
+And copy the certificate into the image
+COPY web.api.pfx /https/web.api.pfx
+
+Copy the generated web.api.pfx file into your web.api project folder (so Docker can access it during build).
+
+storing secrets (like certificate passwords) in ENV or ARG in a Dockerfile is insecure:
+Best practice:
+Use Docker secrets or pass sensitive data at runtime, not build time or in the Dockerfile.
+
+finally:
+docker build -f web.api/Dockerfile -t yourimagename .
+docker run -p 32780:8080 -p 32781:8081 -e ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_Kestrel__Certificates__Default__Password=YourPassword webapi:latest
