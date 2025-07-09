@@ -34,4 +34,4 @@ Use Docker secrets or pass sensitive data at runtime, not build time or in the D
 
 finally:
 docker build -f web.api/Dockerfile -t yourimagename .
-docker run -p 32780:8080 -p 32781:8081 -e ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_Kestrel__Certificates__Default__Password=YourPassword webapi:latest
+docker run --name containername -p 32780:8080 -p 32781:8081 -e ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_Kestrel__Certificates__Default__Password=YourPassword webapi:latest
