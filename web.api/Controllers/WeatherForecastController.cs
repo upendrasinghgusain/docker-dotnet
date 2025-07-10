@@ -21,6 +21,8 @@ namespace web.api.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
+            _logger.LogInformation("proccesing request");
+
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -28,6 +30,18 @@ namespace web.api.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        [HttpGet("logs")]
+        public IActionResult GetLogs()
+        {
+            var logFile = "/app/logs.txt";
+
+            if (!System.IO.File.Exists(logFile))
+                return NotFound("Log file not found.");
+
+            var logContent = System.IO.File.ReadAllText(logFile);
+            return Content(logContent, "text/plain");
         }
     }
 }
